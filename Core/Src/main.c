@@ -122,10 +122,11 @@ int main(void)
   CAN_Config(&hcan1, 0);
   //CAN_Config(&hcan1, 1);
 
+  robo_spin();
   while (1)
   {
 
-	  printf("heartbeat (%d free)\r\n", HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	  //printf("heartbeat (%d free)\n\r", HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
 	  HAL_Delay(500);
 
 	  uint8_t sta;
@@ -134,7 +135,7 @@ int main(void)
 
 	  if(sta != 0)
 	  {
-	     printf("err:%d\r\n", sta);
+	     printf("err:%d\n\r", sta);
 	  }
 
 	 // Can_Dome(&hcan1);
@@ -414,7 +415,7 @@ uint8_t Can_TxMessage(CAN_HandleTypeDef *phcan, uint8_t ide, uint32_t id, uint8_
 
     /*Send frame*/
     HAL_RetVal = HAL_CAN_AddTxMessage(phcan, &TxHeader, pdata, &TxMailbox); //Send a frame of data
-    printf("TxMailbox %d\r\n",TxMailbox);
+    //printf("TxMailbox %d\r\n",TxMailbox);
     if(HAL_RetVal != HAL_OK)
         return 1;
     return 0;
@@ -427,7 +428,29 @@ void Can_Dome(CAN_HandleTypeDef *hcan1)
     sta = Can_TxMessage(hcan1, 0, 8, 8, "789456");
     if(sta != 0)
     {
-        printf("err:%d\r\n", sta);
+        printf("err:%d\n\r", sta);
+    }
+}
+
+void robo_spin()
+{
+
+    uint8_t sta;
+
+    uint8_t TxData[8];
+    TxData[0] = 0xA2;
+    TxData[1] = 0x01;
+    TxData[2] = 0x04;
+    TxData[3] = 0xE5;
+    TxData[4] = 0x10;
+    TxData[5] = 0x27;
+    TxData[6] = 0x00;
+    TxData[7] = 0x00;
+
+    sta = Can_TxMessage(&hcan1, CAN_ID_STD, 0x141, 8, &TxData);
+    if(sta != 0)
+    {
+        printf("err:%d\n\r", sta);
     }
 }
 
@@ -437,7 +460,7 @@ void robo_status()
     uint8_t sta;
 
     uint8_t TxData[8];
-    TxData[0] = 0x94;
+    TxData[0] = 0x9A;
     TxData[1] = 0x00;
     TxData[2] = 0x00;
     TxData[3] = 0x00;
@@ -449,14 +472,14 @@ void robo_status()
     sta = Can_TxMessage(&hcan1, CAN_ID_STD, 0x141, 8, &TxData);
     if(sta != 0)
     {
-        printf("err:%d\r\n", sta);
+        printf("err:%d\n\r", sta);
     }
 }
 
 
 void CAN_Config(CAN_HandleTypeDef *phcan, uint8_t FIFO_Num)
 {
-	 /*
+
     //Configure the filter to receive ID frames in the specified range
     CAN_FilterTypeDef CAN_FilterType;
     CAN_FilterType.FilterBank = 0;                        //Filter group [0,13]
@@ -473,7 +496,7 @@ void CAN_Config(CAN_HandleTypeDef *phcan, uint8_t FIFO_Num)
     {
         Error_Handler();
     }
-    */
+
     /*Open the interrupt service corresponding to the CAN channel*/
     if(FIFO_Num == 0)
     {
@@ -520,11 +543,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
             /*User-defined area*/
             if(RxHeader.IDE == 0)
             {
-                printf("FIFO0,ID:%d -- Rxbuff:%s\r\n", RxHeader.StdId, Rxbuff);
+                printf("FIFO0,ID:%d -- Rxbuff:%x\r\n", RxHeader.StdId, Rxbuff);
+                //printf("ok 1\n\r");
             }
             else
             {
-                printf("FIFO0,ID:%d -- Rxbuff:%s\r\n", RxHeader.ExtId, Rxbuff);
+                //printf("FIFO0,ID:%d -- Rxbuff:%s\r\n", RxHeader.ExtId, Rxbuff);
+                printf("ok 2\n\r");
             }
         }
     }
@@ -551,11 +576,13 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan)
             /*User-defined area*/
             if(RxHeader.IDE == 0)
             {
-                printf("FIFO1,ID:%d -- Rxbuff:%s\r\n", RxHeader.StdId, Rxbuff);
+               // printf("FIFO1,ID:%d -- Rxbuff:%s\r\n", RxHeader.StdId, Rxbuff);
+                printf("ok 3\n\r");
             }
             else
             {
-                printf("FIFO1,ID:%d -- Rxbuff:%s\r\n", RxHeader.ExtId, Rxbuff);
+                //printf("FIFO1,ID:%d -- Rxbuff:%s\r\n", RxHeader.ExtId, Rxbuff);
+                printf("ok 4\n\r");
             }
         }
     }
