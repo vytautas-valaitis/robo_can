@@ -164,22 +164,30 @@ int main(void)
   TxData[6] = 0x00;
   TxData[7] = 0x00;
 
-
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
+   {
+	  printf("blogai2\r\n");
+ 	  //Error_Handler();
+   }
+HAL_CAN_Start(&hcan1);
 
   while (1)
   {
 	  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
 	  {
 		 printf("blogai 1\r\n");
-		 //Error_Handler ();
+		 Error_Handler ();
 	  };
+
+	//  while(HAL_CAN_IsTxMessagePending(&hcan1, TxMailbox)) {
+	//  HAL_CAN_GetTxMailboxesFreeLevel(&hcan1);
+	//  };
+
+
+
 	  //printf("%s", TxMailbox);
 
-	  /*if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK)
-	   {
-		  printf("blogai2\r\n");
-	 	  //Error_Handler();
-	   }*/
+
 
 	  printf("heartbeat\r\n");
 	  HAL_Delay(500);
@@ -187,11 +195,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  /*if (datacheck)
+	  if (datacheck)
 	  {
 		printf("check\r\n");
-	    printf("%s", RxData);
-	  }*/
+	    //printf("%s", RxData);
+	  }
   	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
   	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);
   	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
