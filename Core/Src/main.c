@@ -43,6 +43,8 @@
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
+SPI_HandleTypeDef hspi4;
+
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
@@ -63,6 +65,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_SPI4_Init(void);
 /* USER CODE BEGIN PFP */
 void CAN_Config(CAN_HandleTypeDef *phcan, uint8_t FIFO_Num);
 
@@ -106,6 +109,7 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_USART3_UART_Init();
+  MX_SPI4_Init();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
 
@@ -122,11 +126,46 @@ int main(void)
   CAN_Config(&hcan1, 0);
   //CAN_Config(&hcan1, 1);
 
-  robo_spin();
+  //robo_spin();
+
+
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+
+  uint8_t spi_buf_1;
+  uint8_t spi_buf_2;
+  uint8_t spi_buf_3;
+
+  uint8_t spi_buf_n;
+
+//  uint32_t pressure;
+
+  const uint8_t SN_ADC = 0x00;
+  const uint8_t SN_PROM = 0xA2;
+  const uint8_t SN_RST = 0x1E;
+  const uint8_t SN_D1 = 0x48;
+
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi4, (uint8_t *)&SN_RST, (uint8_t *)&spi_buf_n, 1, 100);
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_SET);
+  HAL_Delay(50);
+
   while (1)
   {
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+	  HAL_SPI_TransmitReceive(&hspi4, (uint8_t *)&SN_D1, (uint8_t *)&spi_buf_n, 1, 100);
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_SET);
+	  HAL_Delay(10);
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+	  HAL_SPI_TransmitReceive(&hspi4, (uint8_t *)&SN_ADC, (uint8_t *)&spi_buf_1, 1, 100);
+	  HAL_SPI_TransmitReceive(&hspi4, (uint8_t *)&SN_ADC, (uint8_t *)&spi_buf_2, 1, 100);
+	  HAL_SPI_TransmitReceive(&hspi4, (uint8_t *)&SN_ADC, (uint8_t *)&spi_buf_3, 1, 100);
 
-	  //printf("heartbeat (%d free)\n\r", HAL_CAN_GetTxMailboxesFreeLevel(&hcan1));
+	 // pressure =  (spi_buf_1 << 16) + (spi_buf_2 << 8) + spi_buf_3;
+
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_SET);
+
+	  printf("%x %x %x ", spi_buf_1, spi_buf_2, spi_buf_3);
+
 	  HAL_Delay(500);
 
 	  uint8_t sta;
@@ -246,6 +285,46 @@ static void MX_CAN1_Init(void)
 }
 
 /**
+  * @brief SPI4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI4_Init(void)
+{
+
+  /* USER CODE BEGIN SPI4_Init 0 */
+
+  /* USER CODE END SPI4_Init 0 */
+
+  /* USER CODE BEGIN SPI4_Init 1 */
+
+  /* USER CODE END SPI4_Init 1 */
+  /* SPI4 parameter configuration*/
+  hspi4.Instance = SPI4;
+  hspi4.Init.Mode = SPI_MODE_MASTER;
+  hspi4.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi4.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi4.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi4.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi4.Init.NSS = SPI_NSS_SOFT;
+  hspi4.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16; //su 8 dar veikia
+  hspi4.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi4.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi4.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi4.Init.CRCPolynomial = 7;
+  hspi4.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi4.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI4_Init 2 */
+
+  /* USER CODE END SPI4_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -292,6 +371,7 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -300,10 +380,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PE4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : USER_Btn_Pin */
   GPIO_InitStruct.Pin = USER_Btn_Pin;
@@ -601,6 +691,8 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+	  HAL_Delay(100);
   }
   /* USER CODE END Error_Handler_Debug */
 }
